@@ -31,19 +31,21 @@ export default function OnboardingPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    await supabase.from("profiles").update({ display_name: displayName, accent_color: accent }).eq("id", user.id);
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ display_name: displayName, accent_color: accent })
+      .eq("id", user.id);
+    if (profileError) { setLoading(false); return toast.error(profileError.message); }
 
-    const { data: duo, error: dErr } = await supabase.from("duos").insert({ name: `${displayName}'s Duo`, created_by: user.id }).select().single();
-    if (dErr || !duo) { setLoading(false); return toast.error(dErr?.message || "Could not create duo"); }
-
-    const { error: mErr } = await supabase.from("duo_members").insert({ duo_id: duo.id, user_id: user.id, role: "owner" });
-    if (mErr) { setLoading(false); return toast.error(mErr.message); }
-
-    // Create invitation via API (server generates token + hash)
-    const res = await fetch("/api/invitations", { method: "POST", body: JSON.stringify({ duo_id: duo.id }) });
+    // The server creates the Duo, membership, and invitation atomically.
+    const res = await fetch("/api/duos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ display_name: displayName }),
+    });
     const payload = await res.json();
     setLoading(false);
-    if (!res.ok) return toast.error(payload.error || "Could not create invitation");
+    if (!res.ok) return toast.error(payload.error || "Could not create Duo");
 
     setInviteLink(`${location.origin}/invite/${payload.token}`);
   }

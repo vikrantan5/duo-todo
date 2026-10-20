@@ -1,10 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireActiveDuo } from "@/lib/duo";
 import SettingsView from "@/components/SettingsView";
 
 export default async function SettingsPage() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user!.id).single();
-  const { data: member } = await supabase.from("duo_members").select("duo_id").eq("user_id", user!.id).eq("active", true).single();
-  return <SettingsView profile={profile!} duoId={member!.duo_id} />;
+  const { supabase, user, duoId } = await requireActiveDuo();
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  if (!profile) return null;
+  return <SettingsView profile={profile} duoId={duoId} />;
 }

@@ -26,7 +26,10 @@ export async function updateSession(request: NextRequest) {
   const path = url.pathname;
   const isAuthRoute = ["/login", "/signup", "/forgot-password", "/reset-password"].some(p => path.startsWith(p));
   const isPublic = path === "/" || path.startsWith("/invite") || path.startsWith("/auth");
-  const needsAuth = !isAuthRoute && !isPublic;
+  // API handlers must receive the request so they can return JSON 401/403
+  // responses. Redirecting them to HTML /login pages breaks fetch callers.
+  const isApiRoute = path.startsWith("/api");
+  const needsAuth = !isAuthRoute && !isPublic && !isApiRoute;
 
   if (!user && needsAuth) {
     url.pathname = "/login";

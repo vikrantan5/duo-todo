@@ -1,25 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { requireActiveDuo } from "@/lib/duo";
 import TodayBoard from "@/components/TodayBoard";
 
 export default async function TodayPage() {
-  const supabase = createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: member, error: memberError } = await supabase
-    .from("duo_members")
-    .select("duo_id")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .maybeSingle();
-
-  if (memberError) throw memberError;
-  if (!member) redirect("/onboarding");
-
-  const duoId = member.duo_id;
-
+  const { supabase, user, duoId } = await requireActiveDuo();
   const [
     { data: members },
     { data: profiles },
