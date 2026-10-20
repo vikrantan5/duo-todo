@@ -8,6 +8,14 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+         // Next 14 App Router caches GET fetches in its Data Cache even on dynamic
+      // pages — a partner who joins mid-session would NEVER appear in
+      // server-rendered duo data (stale cached rows). Bypass it: every Supabase
+      // server fetch must hit PostgREST directly.
+      global: {
+          fetch: (...args: Parameters<typeof fetch>) =>
+          fetch(args[0], { ...args[1], cache: "no-store" }),
+      },
       cookies: {
         get: (name: string) => cookieStore.get(name)?.value,
         set: (name: string, value: string, options: CookieOptions) => {

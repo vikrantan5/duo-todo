@@ -27,6 +27,20 @@ export default function DuoSync({ duoId, userId }: Props) {
       refreshTimer = setTimeout(() => router.refresh(), 120);
     };
 
+
+
+    // Recovery net: realtime usually delivers membership/profile changes, but a
+    // dropped channel or missed event must never leave a stale duo on screen.
+    // Refresh on tab focus and on a slow interval as a documented fallback.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    const fallback = setInterval(() => {
+      if (document.visibilityState === "visible") refresh();
+    }, 30000);
+
     const channel = supabase
       .channel(`duo-sync:${duoId}:${userId}`)
       .on(
@@ -45,9 +59,11 @@ export default function DuoSync({ duoId, userId }: Props) {
         refresh,
       )
       .subscribe();
-
     return () => {
       if (refreshTimer) clearTimeout(refreshTimer);
+           clearInterval(fallback);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
       void supabase.removeChannel(channel);
     };
   }, [duoId, router, supabase, userId]);

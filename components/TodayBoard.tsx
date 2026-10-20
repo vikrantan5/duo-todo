@@ -11,6 +11,7 @@ import HeatmapRow from "./Heatmap";
 import { todayKey } from "@/lib/utils";
 import { Activity } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/router";
 
 type Props = {
   meId: string; duoId: string;
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export default function TodayBoard(p: Props) {
+   const router = useRouter();
   const [todos, setTodos] = useState<Todo[]>(p.initialTodos);
   const [targets, setTargets] = useState<DailyTarget[]>(p.initialTargets);
   const [stats, setStats] = useState<UserStats[]>(p.initialStats);
@@ -72,7 +74,13 @@ export default function TodayBoard(p: Props) {
           const row = payload.new as UserStats;
           setStats(prev => [...prev.filter(s => s.user_id !== row.user_id), row]);
         })
-      .subscribe((status) => setConnected(status === "SUBSCRIBED"));
+      .subscribe((status) => {
+        setConnected(status === "SUBSCRIBED");
+        // Close the initial-fetch/subscribe gap: when the channel comes online
+        // (or resubscribes after a drop), pull fresh server data so tasks
+        // changed while the channel was down are not missed.
+        if (status === "SUBSCRIBED") router.refresh();
+      });
 
     return () => { supabase.removeChannel(ch); };
   }, [p.duoId, p.meId, supabase]);

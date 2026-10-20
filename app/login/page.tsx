@@ -1,13 +1,21 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
 
-export default function LoginPage() {
+/** Only allow same-app relative redirects (no open redirects). */
+function safeNext(raw: string | null): string {
+  if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  return "/today";
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = safeNext(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,7 +26,7 @@ export default function LoginPage() {
     const { error } = await createClient().auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) return toast.error(error.message);
-    router.push("/today");
+    router.push(next);
     router.refresh();
   }
 
@@ -27,7 +35,11 @@ export default function LoginPage() {
       <div className="w-full max-w-sm card p-8 shadow-soft animate-fade-up">
         <Logo className="mb-6" />
         <h1 className="text-2xl font-display mb-1">Welcome back</h1>
-        <p className="muted text-sm mb-6">Sign in to meet your partner.</p>
+        <p className="muted text-sm mb-6">
+          {next !== "/today"
+            ? "Sign in to accept your partner's invite."
+            : "Sign in to meet your partner."}
+        </p>
         <form onSubmit={onSubmit} className="space-y-3">
           <input className="input" type="email" placeholder="you@domain.com"
             value={email} onChange={e => setEmail(e.target.value)} required />
@@ -39,9 +51,17 @@ export default function LoginPage() {
         </form>
         <div className="flex items-center justify-between text-sm mt-4 muted">
           <Link href="/forgot-password" className="hover:underline">Forgot password?</Link>
-          <Link href="/signup" className="hover:underline">Create account</Link>
+          <Link href={`/signup?next=${encodeURIComponent(next)}`} className="hover:underline">Create account</Link>
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

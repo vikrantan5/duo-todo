@@ -22,8 +22,24 @@ export default function SettingsView({ profile, duoId }: { profile: Profile; duo
     const res = await fetch("/api/invitations", { method: "POST", body: JSON.stringify({ duo_id: duoId }) });
     const payload = await res.json();
     if (!res.ok) return toast.error(payload.error);
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://duo-todo-chi.vercel.app";
-    setInviteLink(`${appUrl.replace(/\/$/, "")}/invite/${payload.token}`);
+   // Build the link from the current origin so it always lands on a working host.
+    const base =
+      (typeof window !== "undefined" && window.location.origin) ||
+      (process.env.NEXT_PUBLIC_APP_URL || "https://duo-todo-chi.vercel.app").replace(/\/$/, "");
+    setInviteLink(`${base}/invite/${payload.token}`);
+  }
+
+  async function leaveDuo() {
+    if (!window.confirm("Leave this Duo? Your partner keeps the tasks; you can join another Duo with a new invite.")) return;
+    const { error } = await supabase
+      .from("duo_members")
+      .update({ active: false })
+      .eq("user_id", profile.id)
+      .eq("duo_id", duoId)
+      .eq("active", true);
+    if (error) return toast.error(error.message);
+    toast.success("You left the Duo. Onboarding you afresh…");
+    window.location.href = "/onboarding";
   }
 
   return (
@@ -54,6 +70,12 @@ export default function SettingsView({ profile, duoId }: { profile: Profile; duo
             <button onClick={() => navigator.clipboard.writeText(inviteLink).then(() => toast.success("Copied"))} className="btn btn-ghost"><Copy size={14}/> Copy</button>
           </div>
         )}
+      </div>
+
+         <div className="card p-5 space-y-3">
+        <div className="font-semibold">Leave this Duo</div>
+        <p className="muted text-sm">Stuck in a Duo by mistake? Leave it, then accept a fresh invite from your partner.</p>
+        <button className="btn btn-ghost" onClick={leaveDuo}>Leave Duo</button>
       </div>
     </div>
   );

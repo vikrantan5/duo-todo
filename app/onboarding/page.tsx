@@ -47,8 +47,12 @@ export default function OnboardingPage() {
     setLoading(false);
     if (!res.ok) return toast.error(payload.error || "Could not create Duo");
 
-     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://duo-todo-chi.vercel.app";
-    setInviteLink(`${appUrl.replace(/\/$/, "")}/invite/${payload.token}`);
+  // Build the link from the address the partner is actually likely to use —
+    // the current origin — falling back to the configured app URL.
+    const base =
+      (typeof window !== "undefined" && window.location.origin) ||
+      (process.env.NEXT_PUBLIC_APP_URL || "https://duo-todo-chi.vercel.app").replace(/\/$/, "");
+    setInviteLink(`${base}/invite/${payload.token}`);
   }
 
   async function copy() {
