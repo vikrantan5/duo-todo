@@ -21,7 +21,8 @@ export default function InvitePage({ params }: { params: { token: string } }) {
       return toast.error(payload.error || "Could not accept invitation");
     }
     toast.success("You're in! Welcome to your Duo.");
-    router.push("/today");
+   router.replace("/today");
+    router.refresh();
   }
 
   return (

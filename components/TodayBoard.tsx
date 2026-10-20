@@ -30,6 +30,15 @@ export default function TodayBoard(p: Props) {
   const supabase = useMemo(() => createClient(), []);
   const dateKey = todayKey(p.profiles.find(x => x.id === p.meId)?.timezone || "UTC");
 
+
+  
+  // router.refresh() updates the server props without remounting this client
+  // component. Reconcile those props so a newly accepted partner appears in
+  // the existing dashboard instead of leaving the initial snapshot in place.
+  useEffect(() => setTodos(p.initialTodos), [p.initialTodos]);
+  useEffect(() => setTargets(p.initialTargets), [p.initialTargets]);
+  useEffect(() => setStats(p.initialStats), [p.initialStats]);
+
   // Realtime: scoped to this duo
   useEffect(() => {
     const ch = supabase.channel(`duo:${p.duoId}`, { config: { broadcast: { self: false } } })
