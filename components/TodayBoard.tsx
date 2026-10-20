@@ -12,7 +12,7 @@ import HeatmapRow from "./Heatmap";
 import { todayKey } from "@/lib/utils";
 import { Activity } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation"; // ✅ App Router (refresh() ke liye)
+import { useRouter } from "next/navigation";
 
 type Props = {
   meId: string;
@@ -37,14 +37,10 @@ export default function TodayBoard(p: Props) {
     p.profiles.find((x) => x.id === p.meId)?.timezone || "UTC",
   );
 
-  // router.refresh() updates the server props without remounting this client
-  // component. Reconcile those props so a newly accepted partner appears in
-  // the existing dashboard instead of leaving the initial snapshot in place.
   useEffect(() => setTodos(p.initialTodos), [p.initialTodos]);
   useEffect(() => setTargets(p.initialTargets), [p.initialTargets]);
   useEffect(() => setStats(p.initialStats), [p.initialStats]);
 
-  // Realtime: scoped to this duo
   useEffect(() => {
     const ch = supabase
       .channel(`duo:${p.duoId}`, { config: { broadcast: { self: false } } })
@@ -109,10 +105,10 @@ export default function TodayBoard(p: Props) {
           filter: `duo_id=eq.${p.duoId}`,
         },
         (payload) => {
-          const r = payload.new as any;
+          const r = payload.new as { emoji?: string; message?: string; to_user_id?: string };
           if (payload.eventType === "INSERT" && r.to_user_id === p.meId) {
             toast(
-              `${r.emoji} Your partner sent you a cheer${
+              `${r.emoji ?? ""} Your partner sent you a cheer${
                 r.message ? ": " + r.message : "!"
               }`,
             );
@@ -132,9 +128,6 @@ export default function TodayBoard(p: Props) {
       )
       .subscribe((status) => {
         setConnected(status === "SUBSCRIBED");
-        // Close the initial-fetch/subscribe gap: when the channel comes online
-        // (or resubscribes after a drop), pull fresh server data so tasks
-        // changed while the channel was down are not missed.
         if (status === "SUBSCRIBED") router.refresh();
       });
 
@@ -199,7 +192,9 @@ export default function TodayBoard(p: Props) {
             <Activity
               size={12}
               className={
-                connected ? "text-brand-emerald animate-pulse2" : "text-ink-muted"
+                connected
+                  ? "text-brand-emerald animate-pulse2"
+                  : "text-ink-muted"
               }
             />
             {connected ? "Live" : "Offline"}
@@ -251,5 +246,4 @@ export default function TodayBoard(p: Props) {
       </div>
     </div>
   );
-  
 }
