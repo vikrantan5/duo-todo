@@ -22,7 +22,8 @@ export default function SettingsView({ profile, duoId }: { profile: Profile; duo
     const res = await fetch("/api/invitations", { method: "POST", body: JSON.stringify({ duo_id: duoId }) });
     const payload = await res.json();
     if (!res.ok) return toast.error(payload.error);
-    setInviteLink(`${location.origin}/invite/${payload.token}`);
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://duo-todo-chi.vercel.app";
+    setInviteLink(`${appUrl.replace(/\/$/, "")}/invite/${payload.token}`);
   }
 
   return (
