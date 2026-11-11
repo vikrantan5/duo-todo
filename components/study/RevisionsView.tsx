@@ -72,7 +72,7 @@ export default function RevisionsView(p: Props) {
   const dueToday = due.filter((s) => dueBucket(s, today) === "today");
   const upcoming = due.filter((s) => dueBucket(s, today) === "upcoming");
 
-  const streak = useMemo(() => revisionStreak(history, today), [history, today]);
+   const streak = useMemo(() => revisionStreak(history, today, p.tz), [history, today, p.tz]);
   const last7 = new Set(Array.from({ length: 7 }, (_, i) => format(addDays(new Date(), -i), "yyyy-MM-dd")));
   const weekCount = history.filter((h) => last7.has(dayOf(h.revised_at))).length;
 

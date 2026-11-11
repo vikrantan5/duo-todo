@@ -58,7 +58,7 @@ export default function StudyOverview(p: Props) {
   }, [p.meId, router, supabase]);
 
   const stats = useMemo(() => computeStats(p.subtopics, p.topics, today), [p.subtopics, p.topics, today]);
-  const streak = useMemo(() => revisionStreak(p.history, today), [p.history, today]);
+  const streak = useMemo(() => revisionStreak(p.history, today, p.tz), [p.history, today, p.tz]);
   const dueCount = p.subtopics.filter((s) => isDue(s, today)).length;
   const top = useMemo(
     () =>

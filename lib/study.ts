@@ -1,5 +1,6 @@
 import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import type { RevisionEntry, StudyTopic, Subtopic } from "./types";
+import { todayKey } from "./utils";
 
 /** Spaced repetition schedule (days until the next revision is due). */
 export const SPACED_INTERVALS = [1, 3, 7, 14] as const;
@@ -34,6 +35,16 @@ export function currentIntervalLabel(s: Subtopic): string | null {
 /** Local-calendar day (yyyy-MM-dd) of a timestamp — matches the repo's WeeklyChart bucketing. */
 export function dayOf(iso: string): string {
   return format(parseISO(iso), "yyyy-MM-dd");
+}
+
+/** Local-calendar day (yyyy-MM-dd) of a timestamp rendered in a named IANA timezone. */
+export function zonedDayKey(iso: string, tz: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(iso));
 }
 
 export type DueBucket = "overdue" | "today" | "upcoming" | "later";
@@ -107,9 +118,39 @@ export function computeStats(subtopics: Subtopic[], topics: StudyTopic[], today:
   };
 }
 
+/**
+ * Task streak: consecutive local days (in `tz`) on which the user completed at
+ * least one task, ending today (yesterday counts as grace so an active streak
+ * doesn't reset before you act today). Computed from the todos the dashboard
+ * already loads — user_stats.current_streak is never updated by any trigger,
+ * so this is the reliable source (migration 006 would fix it DB-side too).
+ */
+export function taskStreak(
+  todos: { owner_id: string; is_completed: boolean; completed_at: string | null }[],
+  uid: string,
+  tz: string,
+): number {
+  const done = new Set<string>();
+  for (const t of todos) {
+    if (t.owner_id === uid && t.is_completed && t.completed_at) {
+      done.add(zonedDayKey(t.completed_at, tz));
+    }
+  }
+  const today = todayKey(tz);
+  const cursor = done.has(today) ? today : format(addDays(parseISO(today), -1), "yyyy-MM-dd");
+  if (!done.has(cursor)) return 0;
+  let streak = 0;
+  let day = cursor;
+  while (done.has(day)) {
+    streak += 1;
+    day = format(addDays(parseISO(day), -1), "yyyy-MM-dd");
+  }
+  return streak;
+}
+
 /** Consecutive revision days ending today (or yesterday, grace). */
-export function revisionStreak(history: RevisionEntry[], today: string): number {
-  const days = new Set(history.map((h) => dayOf(h.revised_at)));
+export function revisionStreak(history: RevisionEntry[], today: string, tz = "UTC"): number {
+  const days = new Set(history.map((h) => zonedDayKey(h.revised_at, tz)));
   let cursor = days.has(today)
     ? today
     : format(addDays(parseISO(today), -1), "yyyy-MM-dd");

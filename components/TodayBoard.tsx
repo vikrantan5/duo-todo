@@ -13,6 +13,7 @@ import type {
   Subtopic,
   RevisionEntry,
 } from "@/lib/types";
+import { taskStreak } from "@/lib/study";
 import UserPanel from "./UserPanel";
 import AccountabilityBanner from "./AccountabilityBanner";
 import LeaderCard from "./LeaderCard";
@@ -33,7 +34,7 @@ type Props = {
   initialTodos: Todo[];
   initialTargets: DailyTarget[];
   initialStats: UserStats[];
-    initialSubjects: Subject[];
+  initialSubjects: Subject[];
   initialTopics: StudyTopic[];
   initialSubtopics: Subtopic[];
   studyHistory: RevisionEntry[];
@@ -45,14 +46,14 @@ export default function TodayBoard(p: Props) {
   const [todos, setTodos] = useState<Todo[]>(p.initialTodos);
   const [targets, setTargets] = useState<DailyTarget[]>(p.initialTargets);
   const [stats, setStats] = useState<UserStats[]>(p.initialStats);
-   const [subjects, setSubjects] = useState(p.initialSubjects);
+  const [subjects, setSubjects] = useState(p.initialSubjects);
   const [topics, setTopics] = useState(p.initialTopics);
   const [subtopics, setSubtopics] = useState(p.initialSubtopics);
   const [studyHistory, setStudyHistory] = useState(p.studyHistory);
   const [connected, setConnected] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
- const tz = p.profiles.find((x) => x.id === p.meId)?.timezone || "UTC";
+  const tz = p.profiles.find((x) => x.id === p.meId)?.timezone || "UTC";
   const dateKey = todayKey(tz);
 
   useEffect(() => setTodos(p.initialTodos), [p.initialTodos]);
@@ -170,6 +171,9 @@ export default function TodayBoard(p: Props) {
       ?.target_percentage ?? 70;
   const prof = (uid?: string) => p.profiles.find((x) => x.id === uid);
   const stat = (uid?: string) => stats.find((s) => s.user_id === uid);
+  // Streak is derived from real completion history (works even though nothing
+  // updates user_stats.current_streak in the DB — see migration 006).
+  const streak = (uid?: string) => (uid ? taskStreak(todos, uid, tz) : 0);
 
   async function sendCheer(toUserId: string, emoji: string) {
     const { error } = await supabase.from("reactions").insert({
@@ -201,6 +205,7 @@ export default function TodayBoard(p: Props) {
           todos={todayTodos(myId)}
           target={target(myId)}
           stats={stat(myId)}
+          streak={streak(myId)}
           accent="#8B7CFF"
           supabase={supabase}
         />
@@ -240,6 +245,7 @@ export default function TodayBoard(p: Props) {
           todos={todayTodos(partnerId)}
           target={partnerId ? target(partnerId) : 70}
           stats={stat(partnerId)}
+          streak={streak(partnerId)}
           accent="#43D9A3"
           supabase={supabase}
         />

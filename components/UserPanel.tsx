@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Profile, Todo, UserStats } from "@/lib/types";
@@ -15,13 +16,14 @@ type Props = {
   todos: Todo[];
   target: number;
   stats?: UserStats;
+  streak: number;
   accent: string;
   dateKey: string;
   duoId: string;
   supabase: SupabaseClient;
 };
 
-export default function UserPanel({ me, profile, todos, target, stats, accent, dateKey, duoId, supabase }: Props) {
+export default function UserPanel({ me, profile, todos, target, stats, streak, accent, dateKey, duoId, supabase }: Props) {
   const [filter, setFilter] = useState<"all"|"pending"|"completed">("all");
   const [query, setQuery] = useState("");
   const [newTitle, setNewTitle] = useState("");
@@ -58,9 +60,9 @@ export default function UserPanel({ me, profile, todos, target, stats, accent, d
             <span className="font-semibold">{profile.display_name || "—"}</span>
             {me && <Pencil size={12} className="muted" />}
           </div>
-          <div className="muted text-sm flex items-center gap-2 mt-0.5">
+          <div className="muted text-sm flex items-center gap-2 mt-0.5" data-testid={`streak-count-${me ? "user1" : "partner"}`}>
             <Flame size={14} style={{ color: "#F6BD60" }} />
-            {stats?.current_streak ?? 0} day streak
+            {streak} day{streak === 1 ? "" : "s"} streak
           </div>
           <div className="mt-2 flex items-center gap-2">
             <span className="px-2 py-0.5 text-xs rounded-full border border-ink-border" style={{ color: accent }}>Level {level.level}</span>
