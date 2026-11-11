@@ -157,13 +157,23 @@ begin
     raise exception 'not authenticated';
   end if;
 
-  select s.*, sub.user_id
-  into v_sub, v_owner
+  -- 1) Lock + fetch the subtopic row itself
+  select s.*
+  into v_sub
   from public.subtopics s
-    join public.topics t on t.id = s.topic_id
-    join public.subjects sub on sub.id = t.subject_id
   where s.id = _subtopic_id
-  for update of s;
+  for update;
+
+  if not found then
+    raise exception 'subtopic not found';
+  end if;
+
+  -- 2) Resolve the owner via the topic → subject chain
+  select sub.user_id
+  into v_owner
+  from public.topics t
+    join public.subjects sub on sub.id = t.subject_id
+  where t.id = v_sub.topic_id;
 
   if v_owner is null or v_owner <> auth.uid() then
     raise exception 'subtopic not found';
