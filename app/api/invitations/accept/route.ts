@@ -70,6 +70,9 @@ function revalidateAll() {
   revalidatePath("/today");
   revalidatePath("/history");
   revalidatePath("/insights");
+  revalidatePath("/subjects");
+  revalidatePath("/revisions");
+  revalidatePath("/together");
 }
 
 export async function POST(req: Request) {

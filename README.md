@@ -13,6 +13,12 @@ A real-time, two-person productivity & accountability platform. Built with **Nex
 - 📜 History + per-day reflections (private to owner)
 - 🌗 Polished dark + light themes
 - 🧱 Full PostgreSQL schema with Row Level Security policies
+📚 Subject → Topic → Subtopic study workspace, unlimited per user
+- 🔁 Revision tracking: counter + full revision history per subtopic
+- 🧠 Spaced repetition: revisions due after 1/3/7/14 days, with a due-for-revision queue
+- 📈 Study analytics: study completion vs revision health, per-subject progress
+- 👯 Study Together: duo comparison of subject-wise progress
+- 📅 Subject target dates, difficulty levels, study notes & resource links, weekly study report
 
 ## Quick start
 
@@ -30,6 +36,9 @@ In **Supabase → SQL editor**, run both files in order:
 
 1. `supabase/migrations/001_init.sql` (tables, triggers, functions)
 2. `supabase/migrations/002_rls_policies.sql` (RLS + Realtime publication)
+3. `supabase/migrations/003_fix_onboarding.sql` (atomic onboarding RPC)
+4. `supabase/migrations/004_invite_sync.sql` (realtime for invites)
+5. `supabase/migrations/005_study_module.sql` (subjects / topics / subtopics / revision_history / study_sessions + RLS + study RPCs)
 
 ### 3. Configure Auth
 Supabase → **Authentication → URL Configuration**:

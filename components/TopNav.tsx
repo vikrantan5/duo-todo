@@ -54,6 +54,9 @@ export default function TopNav() {
         </div>
         <nav className="ml-auto flex items-center gap-1">
           {tab("/today", "Today")}
+          {tab("/subjects", "Subjects")}
+          {tab("/revisions", "Revisions")}
+          {tab("/together", "Together")}
           {tab("/history", "History")}
           {tab("/insights", "Insights")}
         </nav>

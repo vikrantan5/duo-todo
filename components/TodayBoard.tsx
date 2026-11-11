@@ -2,12 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Profile, Todo, DailyTarget, UserStats, DuoMember } from "@/lib/types";
+import type {
+  Profile,
+  Todo,
+  DailyTarget,
+  UserStats,
+  DuoMember,
+  Subject,
+  StudyTopic,
+  Subtopic,
+  RevisionEntry,
+} from "@/lib/types";
 import UserPanel from "./UserPanel";
 import AccountabilityBanner from "./AccountabilityBanner";
 import LeaderCard from "./LeaderCard";
 import WeeklyChart from "./WeeklyChart";
 import Achievements from "./Achievements";
+import StudyOverview from "./study/StudyOverview";
 import HeatmapRow from "./Heatmap";
 import { todayKey } from "@/lib/utils";
 import { Activity } from "lucide-react";
@@ -22,6 +33,10 @@ type Props = {
   initialTodos: Todo[];
   initialTargets: DailyTarget[];
   initialStats: UserStats[];
+    initialSubjects: Subject[];
+  initialTopics: StudyTopic[];
+  initialSubtopics: Subtopic[];
+  studyHistory: RevisionEntry[];
 };
 
 export default function TodayBoard(p: Props) {
@@ -30,16 +45,23 @@ export default function TodayBoard(p: Props) {
   const [todos, setTodos] = useState<Todo[]>(p.initialTodos);
   const [targets, setTargets] = useState<DailyTarget[]>(p.initialTargets);
   const [stats, setStats] = useState<UserStats[]>(p.initialStats);
+   const [subjects, setSubjects] = useState(p.initialSubjects);
+  const [topics, setTopics] = useState(p.initialTopics);
+  const [subtopics, setSubtopics] = useState(p.initialSubtopics);
+  const [studyHistory, setStudyHistory] = useState(p.studyHistory);
   const [connected, setConnected] = useState(false);
 
   const supabase = useMemo(() => createClient(), []);
-  const dateKey = todayKey(
-    p.profiles.find((x) => x.id === p.meId)?.timezone || "UTC",
-  );
+ const tz = p.profiles.find((x) => x.id === p.meId)?.timezone || "UTC";
+  const dateKey = todayKey(tz);
 
   useEffect(() => setTodos(p.initialTodos), [p.initialTodos]);
   useEffect(() => setTargets(p.initialTargets), [p.initialTargets]);
   useEffect(() => setStats(p.initialStats), [p.initialStats]);
+  useEffect(() => setSubjects(p.initialSubjects), [p.initialSubjects]);
+  useEffect(() => setTopics(p.initialTopics), [p.initialTopics]);
+  useEffect(() => setSubtopics(p.initialSubtopics), [p.initialSubtopics]);
+  useEffect(() => setStudyHistory(p.studyHistory), [p.studyHistory]);
 
   useEffect(() => {
     const ch = supabase

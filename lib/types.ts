@@ -92,3 +92,92 @@ export type DayReflection = {
   date_key: string;
   reflection_text: string;
 };
+
+// ============================================================
+// Study module — mirrors supabase/migrations/005_study_module.sql
+// ============================================================
+
+export type Subject = {
+  id: UUID;
+  user_id: UUID;
+  name: string;
+  color: string;
+  target_date: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type StudyTopic = {
+  id: UUID;
+  subject_id: UUID;
+  title: string;
+  position: number;
+  created_at: string;
+};
+
+export type SubtopicStatus = "not_started" | "studied";
+export type Difficulty = "easy" | "medium" | "hard";
+
+export type Subtopic = {
+  id: UUID;
+  topic_id: UUID;
+  title: string;
+  status: SubtopicStatus;
+  difficulty: Difficulty;
+  notes: string;
+  resource_url: string | null;
+  revision_count: number;
+  last_revised_at: string | null;
+  next_due_at: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+};
+
+/** revision_number 0 = first study, 1..n = later revisions. */
+export type RevisionEntry = {
+  id: UUID;
+  subtopic_id: UUID;
+  user_id: UUID;
+  revision_number: number;
+  revised_at: string;
+};
+
+export type StudySession = {
+  id: UUID;
+  user_id: UUID;
+  subject_id: UUID | null;
+  duration_minutes: number;
+  created_at: string;
+};
+
+export type SubjectProgress = {
+  name: string;
+  color: string;
+  studied: number;
+  total: number;
+  pct: number;
+};
+
+/** One row per duo member — returned by the get_duo_study_overview() RPC. */
+export type StudyOverviewRow = {
+  user_id: UUID;
+  display_name: string;
+  accent_color: string;
+  study_completion: number;
+  revision_completion: number;
+  topics_studied: number;
+  total_subtopics: number;
+  total_revisions: number;
+  revisions_today: number;
+  subjects: SubjectProgress[];
+};
+
+/** One row per (member, day) — returned by the get_duo_weekly_study() RPC. */
+export type WeeklyStudyRow = {
+  user_id: UUID;
+  day: string;
+  revisions: number;
+  first_studies: number;
+};
