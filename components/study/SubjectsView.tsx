@@ -197,6 +197,7 @@ export default function SubjectsView(p: Props) {
 
   const tree = useMemo(() => {
     const q = query.trim().toLowerCase();
+      const subFiltersActive = difficulty !== "all" || status !== "all";
     return subjects
       .slice()
       .sort((a, b) => a.position - b.position)
@@ -222,7 +223,17 @@ export default function SubjectsView(p: Props) {
           .filter((g) => g.subs.length > 0 || (!activeFilters && g.subs.length === 0));
         return { subject: s, groups, progress: subjectProgress(sSubs) };
       })
-      .filter((e) => e.groups.length > 0);
+       .filter((e) => {
+        // Browsing (no filters): every subject stays visible — including one
+        // with no topics yet. Its expanded card holds the "add topic" input, so
+        // a fresh subject must never disappear (that deadlocked the page: no
+        // card → no way to add topics → the card could never appear).
+        if (!activeFilters) return true;
+        if (e.groups.length > 0) return true;
+        // Search-only filtering: keep a subject whose own name matches even
+        // when none of its subtopics do.
+        return !subFiltersActive && e.subject.name.toLowerCase().includes(q);
+      });
   }, [subjects, topics, subtopics, query, difficulty, status, today, activeFilters]);
 
   return (

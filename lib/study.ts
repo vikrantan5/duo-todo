@@ -122,19 +122,22 @@ export function computeStats(subtopics: Subtopic[], topics: StudyTopic[], today:
  * Task streak: consecutive local days (in `tz`) on which the user completed at
  * least one task, ending today (yesterday counts as grace so an active streak
  * doesn't reset before you act today). Computed from the todos the dashboard
- * already loads — user_stats.current_streak is never updated by any trigger,
- * so this is the reliable source (migration 006 would fix it DB-side too).
+ * already loads — this derived value is the dashboard's source of truth because
+ * it honours the viewer's timezone (migration 006 mirrors it into
+ * user_stats.current_streak DB-side for anything that reads it there).
  */
 export function taskStreak(
-  todos: { owner_id: string; is_completed: boolean; completed_at: string | null }[],
+  todos: { owner_id: string; is_completed: boolean; completed_at: string | null; date_key: string }[],
   uid: string,
   tz: string,
 ): number {
   const done = new Set<string>();
   for (const t of todos) {
-    if (t.owner_id === uid && t.is_completed && t.completed_at) {
-      done.add(zonedDayKey(t.completed_at, tz));
-    }
+    if (t.owner_id !== uid || !t.is_completed) continue;
+    // Rows completed before the client started writing completed_at (legacy
+    // data) fall back to the day the task was scheduled — without this the
+    // whole streak silently reads 0 forever even for daily users.
+    done.add(t.completed_at ? zonedDayKey(t.completed_at, tz) : t.date_key.slice(0, 10));
   }
   const today = todayKey(tz);
   const cursor = done.has(today) ? today : format(addDays(parseISO(today), -1), "yyyy-MM-dd");
